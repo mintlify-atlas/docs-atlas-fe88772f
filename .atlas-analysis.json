@@ -1,0 +1,127 @@
+{
+  "projectType": "api-service",
+  "projectName": "Vaniyk Empire API",
+  "projectDescription": "A digital content marketplace API for purchasing and accessing premium content with secure payments and authentication",
+  "theme": "aspen",
+  "primaryColor": "#7C3AED",
+  "lightColor": "#A78BFA",
+  "darkColor": "#5B21B6",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/content-management",
+              "concepts/payment-flow"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/user-registration",
+              "guides/purchasing-content",
+              "guides/uploading-content",
+              "guides/webhooks"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api/auth/signup",
+              "api/auth/login",
+              "api/auth/admin-login",
+              "api/auth/password-reset",
+              "api/auth/email-verification"
+            ]
+          },
+          {
+            "group": "Content",
+            "pages": [
+              "api/content/list-content",
+              "api/content/get-content",
+              "api/content/create-content",
+              "api/content/update-content",
+              "api/content/delete-content",
+              "api/content/access-content",
+              "api/content/user-purchases"
+            ]
+          },
+          {
+            "group": "Categories",
+            "pages": [
+              "api/categories/list-categories",
+              "api/categories/get-category",
+              "api/categories/create-category",
+              "api/categories/update-category",
+              "api/categories/delete-category"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "api/payments/create-payment-intent",
+              "api/payments/payment-status",
+              "api/payments/webhook",
+              "api/payments/list-payments",
+              "api/payments/refund"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Supabase authentication with email verification and password reset",
+    "Digital content management (PDF, video, audio) with Cloudinary storage",
+    "Secure payment processing via Stripe with webhook support",
+    "Role-based access control (user and admin roles)",
+    "Content purchase tracking and access control",
+    "Category-based content organization",
+    "File upload handling with multer and Cloudinary",
+    "MongoDB data persistence with Mongoose ODM"
+  ],
+  "publicApiSurface": [
+    "POST /api/auth/signup",
+    "POST /api/auth/login",
+    "POST /api/auth/admin/login",
+    "GET /api/auth/profile",
+    "POST /api/auth/password-reset/request",
+    "POST /api/auth/password-reset/update",
+    "POST /api/auth/email/verify",
+    "POST /api/auth/email/resend",
+    "GET /api/content",
+    "GET /api/content/:contentId",
+    "POST /api/content",
+    "PUT /api/content/:contentId",
+    "DELETE /api/content/:contentId",
+    "GET /api/content/:contentId/access",
+    "GET /api/content/user/purchases",
+    "GET /api/categories",
+    "GET /api/categories/:slug",
+    "POST /api/categories",
+    "PUT /api/categories/:categoryId",
+    "DELETE /api/categories/:categoryId",
+    "POST /api/payments/create-payment-intent",
+    "GET /api/payments/status/:paymentIntentId",
+    "POST /api/payments/webhook",
+    "GET /api/payments/admin/all",
+    "POST /api/payments/admin/refund/:purchaseId"
+  ]
+}
