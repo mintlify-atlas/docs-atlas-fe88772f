@@ -1,0 +1,136 @@
+---
+title: "Delete Category"
+api: "DELETE /api/categories/:categoryId"
+description: "Delete a category"
+---
+
+Permanently deletes a category from the system. This endpoint requires admin authentication.
+
+<Warning>
+  This endpoint requires admin privileges. You must include a valid JWT token with admin role in the Authorization header.
+</Warning>
+
+<Note>
+  This operation is irreversible. Make sure you want to permanently delete the category before proceeding.
+</Note>
+
+## Request
+
+### Path Parameters
+
+<ParamField path="categoryId" type="string" required>
+  The unique MongoDB ObjectId of the category to delete
+</ParamField>
+
+### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token with admin privileges
+  
+  Example: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message confirming the deletion
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "message": "Category deleted successfully"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseField name="error" type="string">
+  Error message describing what went wrong
+</ResponseField>
+
+### 404 - Category Not Found
+
+Returned when no category exists with the specified ID.
+
+```json
+{
+  "error": "Category not found"
+}
+```
+
+### 401 - Unauthorized
+
+Returned when the authentication token is missing or invalid.
+
+```json
+{
+  "error": "No token provided"
+}
+```
+
+### 403 - Forbidden
+
+Returned when the authenticated user is not an admin.
+
+```json
+{
+  "error": "Admin access required"
+}
+```
+
+### 500 - Internal Server Error
+
+```json
+{
+  "error": "Database connection failed"
+}
+```
+
+## Example Request
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.vaniyk-empire.com/api/categories/507f1f77bcf86cd799439011 \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+```javascript JavaScript
+const categoryId = '507f1f77bcf86cd799439011';
+
+const response = await fetch(`https://api.vaniyk-empire.com/api/categories/${categoryId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer YOUR_ADMIN_TOKEN'
+  }
+});
+
+const data = await response.json();
+console.log(data.message);
+```
+
+```python Python
+import requests
+
+category_id = '507f1f77bcf86cd799439011'
+
+headers = {
+    'Authorization': 'Bearer YOUR_ADMIN_TOKEN'
+}
+
+response = requests.delete(
+    f'https://api.vaniyk-empire.com/api/categories/{category_id}',
+    headers=headers
+)
+
+data = response.json()
+print(data['message'])
+```
+</CodeGroup>
+
+## Notes
+
+- The deletion is permanent and cannot be undone
+- The `categoryId` parameter must be a valid MongoDB ObjectId
+- Consider the impact on any content (articles, posts, etc.) that may be associated with this category before deletion

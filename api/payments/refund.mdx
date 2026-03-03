@@ -1,0 +1,289 @@
+---
+title: "Refund Payment"
+api: "POST /api/payments/admin/refund/:purchaseId"
+description: "Admin endpoint to process refunds for completed purchases"
+---
+
+Administrator endpoint for issuing refunds on completed purchases. Creates a refund in Stripe and updates the purchase status to `refunded`.
+
+## Authentication
+
+Requires authentication with administrator privileges.
+
+<Warning>
+  This endpoint requires admin role. Regular users will receive a 403 Forbidden response.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="purchaseId" type="string" required>
+  The MongoDB ObjectId of the purchase to refund. Must be a completed purchase.
+</ParamField>
+
+## Refund Rules
+
+- Only purchases with status `completed` can be refunded
+- Cannot refund purchases that are `pending`, `failed`, or already `refunded`
+- Refund is processed through Stripe's refund API
+- Full amount is refunded (partial refunds not supported)
+- Purchase status is updated to `refunded` upon success
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message confirming the refund
+</ResponseField>
+
+<ResponseField name="purchase" type="object">
+  Updated purchase object with `refunded` status
+  
+  <Expandable title="purchase properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the purchase
+    </ResponseField>
+    
+    <ResponseField name="user" type="string">
+      MongoDB ObjectId of the user (not populated)
+    </ResponseField>
+    
+    <ResponseField name="content" type="string">
+      MongoDB ObjectId of the content (not populated)
+    </ResponseField>
+    
+    <ResponseField name="amount" type="number">
+      Purchase amount in USD
+    </ResponseField>
+    
+    <ResponseField name="stripePaymentIntentId" type="string">
+      Stripe payment intent ID
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Will be `refunded` after successful refund
+    </ResponseField>
+    
+    <ResponseField name="purchasedAt" type="string">
+      ISO 8601 timestamp of original purchase
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Stripe Refund Process
+
+1. Endpoint receives refund request with `purchaseId`
+2. Server validates purchase exists and has status `completed`
+3. Server calls Stripe refund API: `stripe.refunds.create({ payment_intent: stripePaymentIntentId })`
+4. Stripe processes full refund to original payment method
+5. If Stripe refund succeeds, purchase status updated to `refunded`
+6. Refunded amount returns to customer's card in 5-10 business days
+
+## Stripe Refund Details
+
+- Refund amount: Full payment amount (partial refunds not supported)
+- Refund destination: Original payment method
+- Refund timeline: 5-10 business days for card refunds
+- Stripe fees: Stripe fees are not returned for refunds
+- Refund status: Must be `succeeded` for purchase to be marked as refunded
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.vaniykempire.com/api/payments/admin/refund/65f1a2b3c4d5e6f7g8h9i0j1 \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+```
+
+```javascript JavaScript
+const purchaseId = '65f1a2b3c4d5e6f7g8h9i0j1';
+
+const response = await fetch(
+  `/api/payments/admin/refund/${purchaseId}`,
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${adminToken}`
+    }
+  }
+);
+
+const { message, purchase } = await response.json();
+console.log(message); // "Refund successful"
+console.log(purchase.status); // "refunded"
+```
+
+```python Python
+import requests
+
+purchase_id = '65f1a2b3c4d5e6f7g8h9i0j1'
+
+response = requests.post(
+    f'https://api.vaniykempire.com/api/payments/admin/refund/{purchase_id}',
+    headers={'Authorization': f'Bearer {admin_token}'}
+)
+
+data = response.json()
+print(data['message'])  # "Refund successful"
+print(data['purchase']['status'])  # "refunded"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "message": "Refund successful",
+  "purchase": {
+    "_id": "65f1a2b3c4d5e6f7g8h9i0j1",
+    "user": "507f1f77bcf86cd799439011",
+    "content": "507f191e810c19729de860ea",
+    "amount": 29.99,
+    "stripePaymentIntentId": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+    "status": "refunded",
+    "purchasedAt": "2024-03-15T10:30:00.000Z"
+  }
+}
+```
+
+```json 404 Purchase Not Found
+{
+  "error": "Purchase not found"
+}
+```
+
+```json 400 Not Completed
+{
+  "error": "Only completed purchases can be refunded"
+}
+```
+
+```json 400 Refund Failed
+{
+  "error": "Refund failed"
+}
+```
+
+```json 401 Not Authenticated
+{
+  "error": "Not authenticated"
+}
+```
+
+```json 403 Forbidden
+{
+  "error": "Admin access required"
+}
+```
+
+```json 500 Server Error
+{
+  "error": "Error message details"
+}
+```
+</ResponseExample>
+
+## Error Scenarios
+
+| Scenario | Status Code | Error Message |
+|----------|-------------|---------------|
+| Purchase not found | 404 | "Purchase not found" |
+| Purchase is pending | 400 | "Only completed purchases can be refunded" |
+| Purchase is failed | 400 | "Only completed purchases can be refunded" |
+| Already refunded | 400 | "Only completed purchases can be refunded" |
+| Stripe refund fails | 400 | "Refund failed" |
+| Not authenticated | 401 | "Not authenticated" |
+| Not admin | 403 | "Admin access required" |
+| Server error | 500 | Error message details |
+
+## Refund Limitations
+
+<Warning>
+  - Stripe charges are not refunded
+  - Only full refunds are supported (no partial refunds)
+  - Refunds cannot be reversed once processed
+  - Some payment methods may take longer than 10 business days
+</Warning>
+
+## Best Practices
+
+1. **Verify purchase details** before refunding
+2. **Document refund reason** in admin logs or external system
+3. **Notify the customer** about the refund via email
+4. **Check Stripe Dashboard** to confirm refund processed
+5. **Consider partial refunds** for specific use cases (requires code modification)
+
+## Use Cases
+
+- Customer requests refund for purchased content
+- Content was incorrectly charged
+- Quality issues with content
+- Duplicate purchase by user
+- Accidental purchase
+- Customer service resolution
+
+## Notifications
+
+<Info>
+  This endpoint does NOT automatically notify users. Implement email notifications separately to inform customers about refunds.
+</Info>
+
+## Idempotency
+
+Calling this endpoint multiple times on the same purchase:
+
+1. First call: Creates refund, updates status to `refunded`, returns success
+2. Subsequent calls: Returns 400 error "Only completed purchases can be refunded"
+
+This prevents accidental double refunds.
+
+## Stripe Dashboard
+
+After issuing a refund:
+
+1. Go to Stripe Dashboard → Payments
+2. Search for payment intent ID
+3. View refund details and status
+4. Monitor refund completion
+
+## Related Endpoints
+
+- [List All Payments](/api/payments/list-payments) - Find purchases to refund
+- [Get Payment Status](/api/payments/payment-status) - Verify purchase status
+- [Create Payment Intent](/api/payments/create-payment-intent) - How purchases are created
+
+## Implementation Notes
+
+- Requires `authenticate` and `requireAdmin` middleware
+- Full refund only (entire payment intent amount)
+- User and content fields are not populated in response
+- Refund is synchronous (waits for Stripe response)
+- Stripe refund status must be `succeeded` for purchase update
+- Source: `src/controllers/paymentController.js:182-217`
+
+## Testing
+
+### Test Mode
+
+Use Stripe test mode to test refunds without real money:
+
+```javascript
+// Use test API keys
+const stripe = require('stripe')('sk_test_...');
+
+// Create test payment
+// Issue refund using test purchase ID
+// Verify refund in Stripe test dashboard
+```
+
+### Test Cards
+
+Stripe provides test cards that simulate different refund scenarios:
+
+- `4242 4242 4242 4242` - Successful refunds
+- `4000 0000 0000 0259` - Successful charges with dispute risk
+
+## Monitoring
+
+Track refund metrics:
+
+- Total refunds per month
+- Refund rate (refunds / total purchases)
+- Average refund amount
+- Common refund reasons (requires manual tracking)
+- Refund processing time

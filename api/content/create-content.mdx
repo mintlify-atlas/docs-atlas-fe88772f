@@ -1,0 +1,194 @@
+---
+title: 'Create Content'
+openapi: 'POST /api/content'
+---
+
+Creates new content with file upload. This endpoint requires admin authentication and accepts multipart/form-data for file uploads.
+
+<Note>
+  This endpoint requires admin authentication. Include a valid JWT token in the Authorization header: `Bearer <token>`
+</Note>
+
+## Request Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for admin authentication
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `multipart/form-data`
+</ParamField>
+
+## Request Body (multipart/form-data)
+
+<ParamField body="title" type="string" required>
+  Content title
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Content description
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Content type. Must be one of: `pdf`, `video`, `audio`
+</ParamField>
+
+<ParamField body="category" type="string" required>
+  Category ID
+</ParamField>
+
+<ParamField body="price" type="number" required>
+  Content price (minimum: 0)
+</ParamField>
+
+<ParamField body="file" type="file" required>
+  The content file to upload (PDF, video, or audio file)
+</ParamField>
+
+<ParamField body="thumbnail" type="file">
+  Optional thumbnail image for the content
+</ParamField>
+
+<ParamField body="status" type="string" default="draft">
+  Content status. Must be one of: `draft`, `published`
+</ParamField>
+
+<ParamField body="tags" type="string">
+  JSON stringified array of tags. Example: `["javascript", "advanced"]`
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+<ResponseField name="content" type="object">
+  Created content object
+  
+  <Expandable title="Content Object">
+    <ResponseField name="_id" type="string">
+      Unique identifier for the content
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Content title
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Content description
+    </ResponseField>
+    
+    <ResponseField name="type" type="string">
+      Content type: `pdf`, `video`, or `audio`
+    </ResponseField>
+    
+    <ResponseField name="category" type="string">
+      Category ID
+    </ResponseField>
+    
+    <ResponseField name="price" type="number">
+      Content price
+    </ResponseField>
+    
+    <ResponseField name="fileUrl" type="string">
+      Cloudinary URL to the uploaded file
+    </ResponseField>
+    
+    <ResponseField name="filePublicId" type="string">
+      Cloudinary public ID for the file
+    </ResponseField>
+    
+    <ResponseField name="thumbnailUrl" type="string">
+      Cloudinary URL to the thumbnail image
+    </ResponseField>
+    
+    <ResponseField name="thumbnailPublicId" type="string">
+      Cloudinary public ID for the thumbnail
+    </ResponseField>
+    
+    <ResponseField name="duration" type="number">
+      Duration in seconds (for video/audio content)
+    </ResponseField>
+    
+    <ResponseField name="fileSize" type="number">
+      File size in bytes
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Content status
+    </ResponseField>
+    
+    <ResponseField name="tags" type="array">
+      Array of tag strings
+    </ResponseField>
+    
+    <ResponseField name="createdBy" type="object">
+      Creator information with name and email
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 date string
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 date string
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+### 400 Bad Request
+```json
+{
+  "error": "Content file is required"
+}
+```
+
+### 401 Unauthorized
+Returned when authentication token is missing or invalid.
+
+### 403 Forbidden
+Returned when the authenticated user is not an admin.
+
+### 500 Internal Server Error
+```json
+{
+  "error": "Error message"
+}
+```
+
+<Warning>
+  Files are uploaded to Cloudinary. The `fileUrl` and `filePublicId` are automatically generated and stored. The `duration` field is automatically populated for video/audio files, and `fileSize` is captured in bytes.
+</Warning>
+
+<ResponseExample>
+```json
+{
+  "message": "Content created successfully",
+  "content": {
+    "_id": "507f1f77bcf86cd799439011",
+    "title": "Advanced JavaScript Patterns",
+    "description": "Learn advanced design patterns in JavaScript",
+    "type": "pdf",
+    "category": "507f1f77bcf86cd799439012",
+    "price": 29.99,
+    "fileUrl": "https://res.cloudinary.com/example/raw/upload/v1234567890/content.pdf",
+    "filePublicId": "vaniyk/content/abc123",
+    "thumbnailUrl": "https://res.cloudinary.com/example/image/upload/v1234567890/thumbnail.jpg",
+    "thumbnailPublicId": "vaniyk/thumbnails/xyz789",
+    "fileSize": 5242880,
+    "status": "draft",
+    "tags": ["javascript", "patterns", "advanced"],
+    "createdBy": {
+      "_id": "507f1f77bcf86cd799439013",
+      "name": "John Doe",
+      "email": "john@example.com"
+    },
+    "createdAt": "2024-03-01T12:00:00.000Z",
+    "updatedAt": "2024-03-01T12:00:00.000Z"
+  }
+}
+```
+</ResponseExample>

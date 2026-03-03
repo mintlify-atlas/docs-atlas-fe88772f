@@ -1,0 +1,303 @@
+---
+title: "List All Payments"
+api: "GET /api/payments/admin/all"
+description: "Admin endpoint to retrieve all payments with pagination and filtering"
+---
+
+Administrator endpoint for viewing all payment transactions across the platform. Supports pagination and filtering by payment status.
+
+## Authentication
+
+Requires authentication with administrator privileges. Include JWT token in Authorization header.
+
+<Warning>
+  This endpoint requires admin role. Regular users will receive a 403 Forbidden response.
+</Warning>
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number for pagination (1-based)
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Number of purchases per page (max: 100)
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by payment status. Options:
+  - `pending` - Payment intent created but not completed
+  - `completed` - Successfully processed payment
+  - `failed` - Payment failed
+  - `refunded` - Payment refunded by admin
+  
+  Omit to show all statuses.
+</ParamField>
+
+## Response
+
+<ResponseField name="purchases" type="array">
+  Array of purchase objects with populated user and content details
+  
+  <Expandable title="Purchase object properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the purchase record
+    </ResponseField>
+    
+    <ResponseField name="user" type="object">
+      Populated user details (limited fields)
+      
+      <Expandable title="user properties">
+        <ResponseField name="_id" type="string">
+          User MongoDB ObjectId
+        </ResponseField>
+        
+        <ResponseField name="name" type="string">
+          User's full name
+        </ResponseField>
+        
+        <ResponseField name="email" type="string">
+          User's email address
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="content" type="object">
+      Populated content details (limited fields)
+      
+      <Expandable title="content properties">
+        <ResponseField name="_id" type="string">
+          Content MongoDB ObjectId
+        </ResponseField>
+        
+        <ResponseField name="title" type="string">
+          Content title
+        </ResponseField>
+        
+        <ResponseField name="type" type="string">
+          Content type (e.g., "video", "article", "course")
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="amount" type="number">
+      Purchase amount in USD
+    </ResponseField>
+    
+    <ResponseField name="stripePaymentIntentId" type="string">
+      Stripe payment intent ID
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Payment status: `pending`, `completed`, `failed`, or `refunded`
+    </ResponseField>
+    
+    <ResponseField name="purchasedAt" type="string">
+      ISO 8601 timestamp of when the purchase record was created
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="totalPages" type="number">
+  Total number of pages available
+</ResponseField>
+
+<ResponseField name="currentPage" type="number">
+  Current page number
+</ResponseField>
+
+<ResponseField name="totalPurchases" type="number">
+  Total count of purchases matching the filter
+</ResponseField>
+
+## Sorting
+
+Results are automatically sorted by `purchasedAt` in descending order (newest first).
+
+<RequestExample>
+```bash cURL - All Payments
+curl -X GET "https://api.vaniykempire.com/api/payments/admin/all?page=1&limit=20" \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+```
+
+```bash cURL - Filter by Status
+curl -X GET "https://api.vaniykempire.com/api/payments/admin/all?status=completed&page=1&limit=50" \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+```
+
+```javascript JavaScript
+// Fetch all completed payments
+const response = await fetch(
+  '/api/payments/admin/all?status=completed&page=1&limit=50',
+  {
+    headers: {
+      'Authorization': `Bearer ${adminToken}`
+    }
+  }
+);
+
+const { purchases, totalPages, currentPage, totalPurchases } = await response.json();
+
+console.log(`Showing page ${currentPage} of ${totalPages}`);
+console.log(`Total purchases: ${totalPurchases}`);
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.vaniykempire.com/api/payments/admin/all',
+    headers={'Authorization': f'Bearer {admin_token}'},
+    params={
+        'status': 'completed',
+        'page': 1,
+        'limit': 50
+    }
+)
+
+data = response.json()
+for purchase in data['purchases']:
+    print(f"{purchase['user']['email']} - {purchase['content']['title']} - ${purchase['amount']}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "purchases": [
+    {
+      "_id": "65f1a2b3c4d5e6f7g8h9i0j1",
+      "user": {
+        "_id": "507f1f77bcf86cd799439011",
+        "name": "John Doe",
+        "email": "john.doe@example.com"
+      },
+      "content": {
+        "_id": "507f191e810c19729de860ea",
+        "title": "Advanced React Patterns",
+        "type": "course"
+      },
+      "amount": 29.99,
+      "stripePaymentIntentId": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+      "status": "completed",
+      "purchasedAt": "2024-03-15T10:30:00.000Z"
+    },
+    {
+      "_id": "65f1a2b3c4d5e6f7g8h9i0j2",
+      "user": {
+        "_id": "507f1f77bcf86cd799439012",
+        "name": "Jane Smith",
+        "email": "jane.smith@example.com"
+      },
+      "content": {
+        "_id": "507f191e810c19729de860eb",
+        "title": "Node.js Masterclass",
+        "type": "course"
+      },
+      "amount": 39.99,
+      "stripePaymentIntentId": "pi_3MtwCxLkdIwHu7ix29b4urQb",
+      "status": "completed",
+      "purchasedAt": "2024-03-15T09:15:00.000Z"
+    }
+  ],
+  "totalPages": 5,
+  "currentPage": 1,
+  "totalPurchases": 87
+}
+```
+
+```json 200 Success - Empty Results
+{
+  "purchases": [],
+  "totalPages": 0,
+  "currentPage": 1,
+  "totalPurchases": 0
+}
+```
+
+```json 401 Not Authenticated
+{
+  "error": "Not authenticated"
+}
+```
+
+```json 403 Forbidden
+{
+  "error": "Admin access required"
+}
+```
+
+```json 500 Server Error
+{
+  "error": "Error message details"
+}
+```
+</ResponseExample>
+
+## Status Filter Examples
+
+| Query | Description |
+|-------|-------------|
+| `?status=completed` | Only successful payments |
+| `?status=pending` | Payments awaiting completion |
+| `?status=failed` | Failed payment attempts |
+| `?status=refunded` | Refunded transactions |
+| No status parameter | All payments regardless of status |
+
+## Pagination Example
+
+To iterate through all pages:
+
+```javascript
+let page = 1;
+let hasMore = true;
+
+while (hasMore) {
+  const response = await fetch(
+    `/api/payments/admin/all?page=${page}&limit=20`,
+    { headers: { 'Authorization': `Bearer ${token}` } }
+  );
+  
+  const data = await response.json();
+  
+  // Process purchases
+  data.purchases.forEach(purchase => {
+    console.log(purchase);
+  });
+  
+  // Check if there are more pages
+  hasMore = page < data.totalPages;
+  page++;
+}
+```
+
+## Use Cases
+
+- Generate financial reports
+- Monitor payment success rates
+- Identify failed payments requiring follow-up
+- Track refunded transactions
+- Export payment data for accounting
+- Customer support investigation
+
+## Performance Considerations
+
+- Default limit of 20 items balances performance and usability
+- Consider implementing cursor-based pagination for very large datasets
+- Populating user and content adds database queries; consider caching for frequent access
+- Add indexes on `status` and `purchasedAt` fields for faster filtering and sorting
+
+## Related Endpoints
+
+- [Get Payment Status](/api/payments/payment-status) - View single payment details
+- [Refund Payment](/api/payments/refund) - Process refunds for completed payments
+- [Create Payment Intent](/api/payments/create-payment-intent) - How payments are created
+
+## Implementation Notes
+
+- Requires `authenticate` and `requireAdmin` middleware
+- User is populated with `name` and `email` fields only
+- Content is populated with `title` and `type` fields only
+- Results are sorted by `purchasedAt` descending (newest first)
+- Query parameters are coerced to numbers where needed
+- Source: `src/controllers/paymentController.js:154-179`

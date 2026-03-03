@@ -1,0 +1,69 @@
+---
+title: 'Delete Content'
+openapi: 'DELETE /api/content/{contentId}'
+---
+
+Deletes content and all associated files from Cloudinary. This endpoint requires admin authentication.
+
+<Note>
+  This endpoint requires admin authentication. Include a valid JWT token in the Authorization header: `Bearer <token>`
+</Note>
+
+## Path Parameters
+
+<ParamField path="contentId" type="string" required>
+  The unique identifier of the content to delete
+</ParamField>
+
+## Request Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for admin authentication
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+## Error Responses
+
+### 404 Not Found
+```json
+{
+  "error": "Content not found"
+}
+```
+
+### 401 Unauthorized
+Returned when authentication token is missing or invalid.
+
+### 403 Forbidden
+Returned when the authenticated user is not an admin.
+
+### 500 Internal Server Error
+```json
+{
+  "error": "Error message"
+}
+```
+
+<Warning>
+  This operation is irreversible. The content record will be deleted from the database, and all associated files (content file and thumbnail) will be permanently deleted from Cloudinary.
+</Warning>
+
+<Info>
+  The endpoint automatically handles different resource types based on content type:
+  - PDF files are deleted as 'image' resource type
+  - Video and audio files are deleted as 'video' resource type
+  - Thumbnails are always deleted as 'image' resource type
+</Info>
+
+<ResponseExample>
+```json
+{
+  "message": "Content and files deleted successfully"
+}
+```
+</ResponseExample>

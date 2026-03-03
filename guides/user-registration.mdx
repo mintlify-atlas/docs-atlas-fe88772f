@@ -1,0 +1,316 @@
+---
+title: 'User Registration and Management'
+description: 'Complete guide to user signup, email verification, profile management, and admin authentication'
+---
+
+This guide covers the complete user lifecycle: registration, email verification, profile management, and admin account setup.
+
+## User Registration Flow
+
+<Steps>
+  <Step title="Register a new user">
+    Create a new user account with email and password. The API creates both a Supabase auth user and a MongoDB user record.
+
+    ```bash
+    curl -X POST https://api.vaniykempire.com/auth/signup \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "user@example.com",
+        "password": "SecurePass123!",
+        "name": "John Doe"
+      }'
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "User created successfully",
+      "user": {
+        "id": "64abc123def456789",
+        "email": "user@example.com",
+        "name": "John Doe"
+      },
+      "session": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "refresh_token": "v1.MRjrUNHQrI7BPtJZTlQ...",
+        "expires_in": 3600
+      }
+    }
+    ```
+
+    <Note>Store the `access_token` securely. Include it in the `Authorization: Bearer <token>` header for authenticated requests.</Note>
+  </Step>
+
+  <Step title="Verify email address">
+    After signup, Supabase sends a verification email. When the user clicks the link, they're redirected to your frontend with a `token_hash`. Send this to the verification endpoint.
+
+    ```bash
+    curl -X POST https://api.vaniykempire.com/auth/verify-email \
+      -H "Content-Type: application/json" \
+      -d '{
+        "token_hash": "pkce_a1b2c3d4e5f6g7h8i9j0",
+        "type": "email"
+      }'
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "Email verified successfully",
+      "session": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "refresh_token": "v1.MRjrUNHQrI7BPtJZTlQ...",
+        "expires_in": 3600
+      }
+    }
+    ```
+
+    The MongoDB user record is updated with `emailVerified: true`.
+  </Step>
+
+  <Step title="Resend verification email (if needed)">
+    If the user didn't receive the email or it expired:
+
+    ```bash
+    curl -X POST https://api.vaniykempire.com/auth/resend-verification \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "user@example.com"
+      }'
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "Verification email sent"
+    }
+    ```
+  </Step>
+</Steps>
+
+## User Authentication
+
+### Login
+
+Authenticate existing users and receive session tokens:
+
+```bash
+curl -X POST https://api.vaniykempire.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePass123!"
+  }'
+```
+
+**Response:**
+```json
+{
+  "message": "Login successful",
+  "user": {
+    "id": "64abc123def456789",
+    "email": "user@example.com",
+    "name": "John Doe"
+  },
+  "session": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "v1.MRjrUNHQrI7BPtJZTlQ...",
+    "expires_in": 3600
+  }
+}
+```
+
+## Profile Management
+
+### Get User Profile
+
+Retrieve the authenticated user's profile:
+
+```bash
+curl -X GET https://api.vaniykempire.com/auth/profile \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**Response:**
+```json
+{
+  "user": {
+    "_id": "64abc123def456789",
+    "supabaseId": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "role": "user",
+    "emailVerified": true,
+    "createdAt": "2026-03-01T10:30:00.000Z",
+    "updatedAt": "2026-03-01T10:35:00.000Z"
+  }
+}
+```
+
+<Warning>The profile endpoint requires a valid `Authorization: Bearer <token>` header. Requests without authentication return a 401 error.</Warning>
+
+## Password Management
+
+<Steps>
+  <Step title="Request password reset">
+    Send a password reset email:
+
+    ```bash
+    curl -X POST https://api.vaniykempire.com/auth/request-password-reset \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "user@example.com"
+      }'
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "Password reset email sent"
+    }
+    ```
+
+    The user receives an email with a reset link pointing to `${FRONTEND_URL}/reset-password`.
+  </Step>
+
+  <Step title="Update password">
+    After the user clicks the reset link and is authenticated with the reset token, update their password:
+
+    ```bash
+    curl -X POST https://api.vaniykempire.com/auth/update-password \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer <reset_token_from_email>" \
+      -d '{
+        "password": "NewSecurePass456!"
+      }'
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "Password updated successfully"
+    }
+    ```
+  </Step>
+</Steps>
+
+## Admin Registration
+
+Admins have elevated privileges for content management. Creating an admin account requires a secret key.
+
+<Steps>
+  <Step title="Register as admin">
+    Use the admin signup endpoint with the `ADMIN_SECRET_KEY`:
+
+    ```bash
+    curl -X POST https://api.vaniykempire.com/auth/admin/signup \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "admin@vaniykempire.com",
+        "password": "AdminSecure123!",
+        "name": "Admin User",
+        "adminSecret": "your-admin-secret-key"
+      }'
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "Admin user created successfully",
+      "user": {
+        "id": "64abc789def123456",
+        "email": "admin@vaniykempire.com",
+        "name": "Admin User",
+        "role": "admin"
+      },
+      "session": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "refresh_token": "v1.MRjrUNHQrI7BPtJZTlQ...",
+        "expires_in": 3600
+      }
+    }
+    ```
+
+    <Warning>Keep `ADMIN_SECRET_KEY` secure. Never expose it in client-side code or public repositories.</Warning>
+  </Step>
+
+  <Step title="Admin login">
+    Admins use a dedicated login endpoint that verifies their role:
+
+    ```bash
+    curl -X POST https://api.vaniykempire.com/auth/admin/login \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "admin@vaniykempire.com",
+        "password": "AdminSecure123!"
+      }'
+    ```
+
+    **Response:**
+    ```json
+    {
+      "message": "Admin login successful",
+      "user": {
+        "id": "64abc789def123456",
+        "email": "admin@vaniykempire.com",
+        "name": "Admin User",
+        "role": "admin"
+      },
+      "session": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "refresh_token": "v1.MRjrUNHQrI7BPtJZTlQ...",
+        "expires_in": 3600
+      }
+    }
+    ```
+
+    <Note>Regular users attempting to use the admin login endpoint receive a 403 error.</Note>
+  </Step>
+</Steps>
+
+## Error Handling
+
+Common error responses:
+
+| Status Code | Error | Description |
+|-------------|-------|-------------|
+| 400 | Invalid request | Missing required fields or validation errors |
+| 401 | Unauthorized | Invalid credentials or expired token |
+| 403 | Forbidden | Admin secret incorrect or insufficient permissions |
+| 404 | User not found | User doesn't exist in MongoDB |
+| 500 | Server error | Internal server error |
+
+**Example error response:**
+```json
+{
+  "error": "Invalid admin secret"
+}
+```
+
+## Implementation Notes
+
+<Info>
+**Dual Database Architecture**: The API uses both Supabase (authentication) and MongoDB (user data):
+- **Supabase**: Handles authentication, session management, and email verification
+- **MongoDB**: Stores user profiles, roles, and application-specific data
+
+The `supabaseId` field links the two records.
+</Info>
+
+### Source Code References
+
+- User signup: `src/controllers/authController.js:4`
+- Email verification: `src/controllers/authController.js:142`
+- Admin registration: `src/controllers/authController.js:174`
+- Profile retrieval: `src/controllers/authController.js:69`
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Purchase Content" icon="credit-card" href="/guides/purchasing-content">
+    Learn how to browse and purchase content
+  </Card>
+  <Card title="Upload Content" icon="upload" href="/guides/uploading-content">
+    Admin guide for uploading and managing content
+  </Card>
+</CardGroup>

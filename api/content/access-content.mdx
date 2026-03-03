@@ -1,0 +1,166 @@
+---
+title: 'Access Content'
+openapi: 'GET /api/content/{contentId}/access'
+---
+
+Retrieves full content details including the file URL for purchased content. This endpoint requires authentication and verifies that the user has purchased the content.
+
+<Note>
+  This endpoint requires user authentication. Include a valid JWT token in the Authorization header: `Bearer <token>`
+</Note>
+
+## Path Parameters
+
+<ParamField path="contentId" type="string" required>
+  The unique identifier of the content to access
+</ParamField>
+
+## Request Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for user authentication
+</ParamField>
+
+## Response
+
+<ResponseField name="content" type="object">
+  Content object with file URL included
+  
+  <Expandable title="Content Object">
+    <ResponseField name="_id" type="string">
+      Unique identifier for the content
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Content title
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Content description
+    </ResponseField>
+    
+    <ResponseField name="type" type="string">
+      Content type: `pdf`, `video`, or `audio`
+    </ResponseField>
+    
+    <ResponseField name="category" type="string">
+      Category ID
+    </ResponseField>
+    
+    <ResponseField name="price" type="number">
+      Content price
+    </ResponseField>
+    
+    <ResponseField name="fileUrl" type="string">
+      Cloudinary URL to access the content file (only available after purchase)
+    </ResponseField>
+    
+    <ResponseField name="filePublicId" type="string">
+      Cloudinary public ID for the file
+    </ResponseField>
+    
+    <ResponseField name="thumbnailUrl" type="string">
+      URL to the content thumbnail image
+    </ResponseField>
+    
+    <ResponseField name="thumbnailPublicId" type="string">
+      Cloudinary public ID for the thumbnail
+    </ResponseField>
+    
+    <ResponseField name="duration" type="number">
+      Duration in seconds (for video/audio content)
+    </ResponseField>
+    
+    <ResponseField name="fileSize" type="number">
+      File size in bytes
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Content status: `draft` or `published`
+    </ResponseField>
+    
+    <ResponseField name="tags" type="array">
+      Array of tag strings
+    </ResponseField>
+    
+    <ResponseField name="createdBy" type="object">
+      Creator information
+      
+      <Expandable title="Creator Object">
+        <ResponseField name="_id" type="string">
+          User ID
+        </ResponseField>
+        
+        <ResponseField name="name" type="string">
+          Creator name
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 date string
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 date string
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+### 403 Forbidden
+```json
+{
+  "error": "You need to purchase this content to access it"
+}
+```
+
+### 404 Not Found
+```json
+{
+  "error": "Content not found"
+}
+```
+
+### 401 Unauthorized
+Returned when authentication token is missing or invalid.
+
+### 500 Internal Server Error
+```json
+{
+  "error": "Error message"
+}
+```
+
+<Info>
+  This endpoint verifies that a completed purchase exists for the authenticated user and the requested content before returning the file URL. Only purchases with `status: 'completed'` are considered valid.
+</Info>
+
+<ResponseExample>
+```json
+{
+  "content": {
+    "_id": "507f1f77bcf86cd799439011",
+    "title": "Advanced JavaScript Patterns",
+    "description": "Learn advanced design patterns in JavaScript including Module, Observer, and Factory patterns with real-world examples.",
+    "type": "pdf",
+    "category": "507f1f77bcf86cd799439012",
+    "price": 29.99,
+    "fileUrl": "https://res.cloudinary.com/example/raw/upload/v1234567890/content.pdf",
+    "filePublicId": "vaniyk/content/abc123",
+    "thumbnailUrl": "https://res.cloudinary.com/example/image/upload/v1234567890/thumbnail.jpg",
+    "thumbnailPublicId": "vaniyk/thumbnails/xyz789",
+    "fileSize": 5242880,
+    "status": "published",
+    "tags": ["javascript", "patterns", "advanced", "design-patterns"],
+    "createdBy": {
+      "_id": "507f1f77bcf86cd799439013",
+      "name": "John Doe"
+    },
+    "createdAt": "2024-03-01T12:00:00.000Z",
+    "updatedAt": "2024-03-01T12:00:00.000Z"
+  }
+}
+```
+</ResponseExample>

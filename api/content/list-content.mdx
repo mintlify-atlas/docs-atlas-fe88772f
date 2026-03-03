@@ -1,0 +1,156 @@
+---
+title: 'List Content'
+openapi: 'GET /api/content'
+---
+
+Retrieves a paginated list of all published content with optional filters. This is a public endpoint that does not require authentication.
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Number of items per page
+</ParamField>
+
+<ParamField query="category" type="string">
+  Filter by category ID
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by content type. Must be one of: `pdf`, `video`, `audio`
+</ParamField>
+
+<ParamField query="minPrice" type="number">
+  Filter by minimum price
+</ParamField>
+
+<ParamField query="maxPrice" type="number">
+  Filter by maximum price
+</ParamField>
+
+<ParamField query="search" type="string">
+  Full-text search across title, description, and tags
+</ParamField>
+
+## Response
+
+<ResponseField name="content" type="array">
+  Array of content objects
+  
+  <Expandable title="Content Object">
+    <ResponseField name="_id" type="string">
+      Unique identifier for the content
+    </ResponseField>
+    
+    <ResponseField name="title" type="string" required>
+      Content title
+    </ResponseField>
+    
+    <ResponseField name="description" type="string" required>
+      Content description
+    </ResponseField>
+    
+    <ResponseField name="type" type="string" required>
+      Content type: `pdf`, `video`, or `audio`
+    </ResponseField>
+    
+    <ResponseField name="category" type="string" required>
+      Category ID
+    </ResponseField>
+    
+    <ResponseField name="price" type="number" required>
+      Content price (minimum: 0)
+    </ResponseField>
+    
+    <ResponseField name="thumbnailUrl" type="string">
+      URL to the content thumbnail image
+    </ResponseField>
+    
+    <ResponseField name="duration" type="number">
+      Duration in seconds (for video/audio content only)
+    </ResponseField>
+    
+    <ResponseField name="fileSize" type="number">
+      File size in bytes
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Content status: `draft` or `published`
+    </ResponseField>
+    
+    <ResponseField name="tags" type="array">
+      Array of tag strings
+    </ResponseField>
+    
+    <ResponseField name="createdBy" type="object">
+      Creator information
+      
+      <Expandable title="Creator Object">
+        <ResponseField name="_id" type="string">
+          User ID
+        </ResponseField>
+        
+        <ResponseField name="name" type="string">
+          Creator name
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 date string
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 date string
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="totalPages" type="number">
+  Total number of pages
+</ResponseField>
+
+<ResponseField name="currentPage" type="number">
+  Current page number
+</ResponseField>
+
+<ResponseField name="totalContent" type="number">
+  Total count of content items
+</ResponseField>
+
+<Note>
+  The `fileUrl` and `filePublicId` fields are not included in the public listing response. Users must purchase content to access the file URL via the [Access Content](/api/content/access-content) endpoint.
+</Note>
+
+<ResponseExample>
+```json
+{
+  "content": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "title": "Advanced JavaScript Patterns",
+      "description": "Learn advanced design patterns in JavaScript",
+      "type": "pdf",
+      "category": "507f1f77bcf86cd799439012",
+      "price": 29.99,
+      "thumbnailUrl": "https://res.cloudinary.com/example/image/upload/v1234567890/thumbnail.jpg",
+      "fileSize": 5242880,
+      "status": "published",
+      "tags": ["javascript", "patterns", "advanced"],
+      "createdBy": {
+        "_id": "507f1f77bcf86cd799439013",
+        "name": "John Doe"
+      },
+      "createdAt": "2024-03-01T12:00:00.000Z",
+      "updatedAt": "2024-03-01T12:00:00.000Z"
+    }
+  ],
+  "totalPages": 5,
+  "currentPage": 1,
+  "totalContent": 47
+}
+```
+</ResponseExample>

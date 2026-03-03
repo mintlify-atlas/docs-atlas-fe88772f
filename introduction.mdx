@@ -1,0 +1,173 @@
+---
+title: 'Welcome to Vaniyk Empire API'
+description: 'A comprehensive content marketplace API built with Express, Supabase, MongoDB, and Stripe'
+---
+
+## What is Vaniyk Empire API?
+
+Vaniyk Empire API is a full-featured digital content marketplace platform that enables creators to sell premium content (videos, PDFs, and other digital assets) to users. Built with modern technologies, it provides secure authentication, seamless payments, and robust content management.
+
+The API handles everything from user registration and authentication to content purchases and access control, making it easy to build a complete digital marketplace experience.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card
+    title="Supabase Authentication"
+    icon="shield-check"
+    iconType="duotone"
+  >
+    Secure JWT-based authentication powered by Supabase with support for email/password login, email verification, and password reset flows.
+  </Card>
+  <Card
+    title="Stripe Payments"
+    icon="credit-card"
+    iconType="duotone"
+  >
+    Integrated Stripe payment processing with webhook support for automatic purchase confirmation and access management.
+  </Card>
+  <Card
+    title="Content Management"
+    icon="folder-open"
+    iconType="duotone"
+  >
+    Upload and manage videos, PDFs, and other digital content with Cloudinary integration for optimized storage and delivery.
+  </Card>
+  <Card
+    title="Access Control"
+    icon="lock"
+    iconType="duotone"
+  >
+    Granular permissions system that ensures users can only access content they've purchased, with admin roles for content creators.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+The Vaniyk Empire API follows a simple workflow:
+
+<Steps>
+  <Step title="User Registration">
+    Users sign up with email and password. The system creates accounts in both Supabase (for authentication) and MongoDB (for application data).
+  </Step>
+  <Step title="Browse Content">
+    Users can browse published content, view details, and filter by category, type, or price range without authentication.
+  </Step>
+  <Step title="Purchase Content">
+    Authenticated users create payment intents through Stripe to purchase content. Payments are processed securely via Stripe's hosted payment flow.
+  </Step>
+  <Step title="Access Content">
+    After successful payment confirmation via webhook, users gain permanent access to their purchased content and can stream or download it.
+  </Step>
+</Steps>
+
+## Technology Stack
+
+<Info>
+  The API is built with proven technologies that prioritize security, scalability, and developer experience.
+</Info>
+
+- **Runtime**: Node.js with Express 5.2.1
+- **Authentication**: Supabase Auth with JWT tokens
+- **Database**: MongoDB with Mongoose ODM
+- **Payments**: Stripe Payment Intents API
+- **File Storage**: Cloudinary for media assets
+- **Session Management**: Supabase session handling
+
+## API Architecture
+
+The API is organized into several key modules:
+
+```
+/api/auth         → Authentication endpoints (signup, login, profile)
+/api/content      → Content browsing and access
+/api/categories   → Content categorization
+/api/payments     → Payment processing and webhooks
+```
+
+<Note>
+  All authenticated endpoints require a valid JWT token in the `Authorization` header with the `Bearer` scheme.
+</Note>
+
+## Core Concepts
+
+### Dual Database Architecture
+
+The API uses both Supabase and MongoDB:
+- **Supabase**: Handles authentication, session management, and JWT token generation
+- **MongoDB**: Stores application data including user profiles, content metadata, purchases, and categories
+
+This architecture combines Supabase's robust authentication features with MongoDB's flexibility for complex business logic.
+
+### Purchase-Based Access
+
+Content files are protected and only accessible after purchase:
+1. Public endpoints show content metadata (title, description, price) but not file URLs
+2. Users create payment intents to purchase specific content
+3. Stripe webhooks confirm successful payments
+4. Authenticated users can then access their purchased content via the `/api/content/:contentId/access` endpoint
+
+### Role-Based Permissions
+
+The API supports two user roles:
+- **User**: Can browse, purchase, and access content
+- **Admin**: Can create, update, delete content and manage all purchases
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart Guide"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get up and running in 5 minutes with a complete example
+  </Card>
+  <Card
+    title="Authentication"
+    icon="key"
+    href="/authentication"
+  >
+    Learn how to authenticate users and secure API requests
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api/auth/signup"
+  >
+    Explore all available endpoints and parameters
+  </Card>
+  <Card
+    title="Webhooks"
+    icon="webhook"
+    href="/guides/webhooks"
+  >
+    Set up Stripe webhooks for payment processing
+  </Card>
+</CardGroup>
+
+## Base URL
+
+The API is hosted at:
+
+```
+https://api.vaniykempire.com
+```
+
+<Warning>
+  All API requests must be made over HTTPS. HTTP requests will be rejected.
+</Warning>
+
+## Rate Limiting
+
+The API implements rate limiting to ensure fair usage:
+- **Public endpoints**: 100 requests per 15 minutes
+- **Authenticated endpoints**: 1000 requests per 15 minutes
+- **Admin endpoints**: 5000 requests per 15 minutes
+
+## Support
+
+Need help? Here are your options:
+
+- Check the [API Reference](/api/auth/signup) for endpoint documentation
+- Contact support at support@vaniykempire.com

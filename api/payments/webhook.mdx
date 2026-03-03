@@ -1,0 +1,246 @@
+---
+title: "Stripe Webhook"
+api: "POST /api/payments/webhook"
+description: "Stripe webhook endpoint for processing payment events"
+---
+
+Secure webhook endpoint that receives events from Stripe when payment status changes. This endpoint handles payment intent success and failure events, updating the Purchase record status accordingly.
+
+## Important Notes
+
+<Warning>
+  This endpoint requires raw request body parsing and must be placed before the `express.json()` middleware in your Express application. The Stripe signature verification requires access to the raw request body.
+</Warning>
+
+<Info>
+  This endpoint is called by Stripe servers, not by your frontend application. Configure this webhook URL in your Stripe Dashboard under Developers → Webhooks.
+</Info>
+
+## Webhook Configuration
+
+1. In Stripe Dashboard, go to Developers → Webhooks
+2. Click "Add endpoint"
+3. Enter URL: `https://api.vaniykempire.com/api/payments/webhook`
+4. Select events to listen for:
+   - `payment_intent.succeeded`
+   - `payment_intent.payment_failed`
+5. Copy the webhook signing secret to `STRIPE_WEBHOOK_SECRET` environment variable
+
+## Signature Verification
+
+The endpoint verifies webhook authenticity using Stripe's signature verification:
+
+```javascript
+const sig = req.headers['stripe-signature'];
+const event = stripe.webhooks.constructEvent(
+  req.body,
+  sig,
+  process.env.STRIPE_WEBHOOK_SECRET
+);
+```
+
+## Handled Events
+
+### payment_intent.succeeded
+
+Fired when a payment successfully completes. The webhook handler:
+
+1. Finds the Purchase record by `stripePaymentIntentId`
+2. Updates Purchase status to `completed`
+3. Logs the successful payment
+
+### payment_intent.payment_failed
+
+Fired when a payment fails (card declined, insufficient funds, etc.). The webhook handler:
+
+1. Finds the Purchase record by `stripePaymentIntentId`
+2. Updates Purchase status to `failed`
+3. Logs the failed payment
+
+## Request Headers
+
+<ParamField header="stripe-signature" type="string" required>
+  Stripe webhook signature for verifying the request authenticity. Automatically added by Stripe.
+</ParamField>
+
+<ParamField header="content-type" type="string">
+  Should be `application/json`
+</ParamField>
+
+## Request Body
+
+The raw Stripe event object. Common fields include:
+
+<ParamField body="id" type="string">
+  Unique identifier for the event (e.g., `evt_1MtwBwLkdIwHu7ix28a3tqPa`)
+</ParamField>
+
+<ParamField body="type" type="string">
+  Event type (e.g., `payment_intent.succeeded`, `payment_intent.payment_failed`)
+</ParamField>
+
+<ParamField body="data" type="object">
+  Event data containing the payment intent object
+  
+  <Expandable title="data.object properties">
+    <ParamField body="id" type="string">
+      Payment intent ID (e.g., `pi_3MtwBwLkdIwHu7ix28a3tqPa`)
+    </ParamField>
+    
+    <ParamField body="amount" type="number">
+      Amount in cents
+    </ParamField>
+    
+    <ParamField body="currency" type="string">
+      Three-letter ISO currency code (e.g., `usd`)
+    </ParamField>
+    
+    <ParamField body="status" type="string">
+      Payment intent status
+    </ParamField>
+    
+    <ParamField body="metadata" type="object">
+      Custom metadata attached when creating payment intent
+      
+      <Expandable title="metadata properties">
+        <ParamField body="contentId" type="string">
+          MongoDB ObjectId of purchased content
+        </ParamField>
+        
+        <ParamField body="userId" type="string">
+          MongoDB ObjectId of purchasing user
+        </ParamField>
+        
+        <ParamField body="contentTitle" type="string">
+          Title of purchased content
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="received" type="boolean">
+  Always returns `true` to acknowledge receipt of the webhook
+</ResponseField>
+
+## Error Handling
+
+If signature verification fails, returns:
+
+- **Status Code**: 400
+- **Body**: `Webhook Error: <error message>`
+
+<RequestExample>
+```bash cURL (Simulated)
+# This is how Stripe calls your webhook
+curl -X POST https://api.vaniykempire.com/api/payments/webhook \
+  -H "stripe-signature: t=1678886400,v1=5257a869e7ecebeda32affa62cdca3fa51cad7e77a0e56ff536d0ce8e108d8bd" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "evt_1MtwBwLkdIwHu7ix28a3tqPa",
+    "type": "payment_intent.succeeded",
+    "data": {
+      "object": {
+        "id": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+        "amount": 2999,
+        "currency": "usd",
+        "status": "succeeded",
+        "metadata": {
+          "contentId": "507f191e810c19729de860ea",
+          "userId": "507f1f77bcf86cd799439011",
+          "contentTitle": "Advanced React Patterns"
+        }
+      }
+    }
+  }'
+```
+
+```javascript Testing Webhooks Locally
+// Use Stripe CLI to forward webhooks to localhost
+// stripe listen --forward-to localhost:3000/api/payments/webhook
+
+// Trigger test events
+// stripe trigger payment_intent.succeeded
+// stripe trigger payment_intent.payment_failed
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "received": true
+}
+```
+
+```text 400 Verification Failed
+Webhook Error: No signatures found matching the expected signature for payload
+```
+</ResponseExample>
+
+## Security Best Practices
+
+1. **Always verify webhook signatures** - Prevents unauthorized requests from spoofing Stripe
+2. **Use raw body parsing** - Required for signature verification
+3. **Store webhook secret securely** - Use environment variables, never commit to git
+4. **Implement idempotency** - Handle duplicate webhook events gracefully
+5. **Return 200 quickly** - Stripe will retry if endpoint times out
+
+## Webhook Retry Logic
+
+Stripe automatically retries failed webhooks:
+
+- If endpoint returns non-2xx status code
+- If endpoint times out (after 30 seconds)
+- Retries for up to 3 days with exponential backoff
+- View retry attempts in Stripe Dashboard
+
+## Testing
+
+### Local Development
+
+```bash
+# Install Stripe CLI
+stripe login
+
+# Forward webhooks to local server
+stripe listen --forward-to localhost:3000/api/payments/webhook
+
+# Trigger test events
+stripe trigger payment_intent.succeeded
+stripe trigger payment_intent.payment_failed
+```
+
+### Test Mode
+
+Use Stripe test mode webhook endpoints with test API keys to safely test without affecting production data.
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Signature verification fails | Ensure raw body parsing is enabled and webhook secret is correct |
+| Purchase not found | Check that payment intent was created through your API |
+| Webhooks not received | Verify webhook URL is correct in Stripe Dashboard |
+| Duplicate events | Implement idempotency using event ID |
+
+## Related Endpoints
+
+- [Create Payment Intent](/api/payments/create-payment-intent) - Creates the payment intent that triggers webhooks
+- [Get Payment Status](/api/payments/payment-status) - Check payment status after webhook processing
+
+## Environment Variables
+
+<ParamField query="STRIPE_WEBHOOK_SECRET" type="string" required>
+  Webhook signing secret from Stripe Dashboard. Format: `whsec_...`
+</ParamField>
+
+## Implementation Notes
+
+- Middleware: `express.raw({ type: 'application/json' })`
+- Must be registered before `express.json()` middleware
+- Unhandled event types are logged but don't cause errors
+- Purchase updates are wrapped in try-catch to prevent webhook failures
+- Source: `src/controllers/paymentController.js:64-130`
+- Route configuration: `src/routes/paymentRoutes.js:7-11`

@@ -1,0 +1,193 @@
+---
+title: "Get Payment Status"
+api: "GET /api/payments/status/:paymentIntentId"
+description: "Retrieve the status and details of a payment by Stripe payment intent ID"
+---
+
+Retrieves the purchase record and status for a specific Stripe payment intent. This endpoint is used to check whether a payment has been completed, is still pending, has failed, or has been refunded.
+
+## Authentication
+
+Requires authentication. Users can only view their own payment status.
+
+## Path Parameters
+
+<ParamField path="paymentIntentId" type="string" required>
+  The Stripe payment intent ID (starts with `pi_`). This is returned when creating a payment intent or can be obtained from Stripe webhooks.
+</ParamField>
+
+## Response
+
+<ResponseField name="purchase" type="object">
+  The purchase record with populated content details
+  
+  <Expandable title="purchase properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the purchase record
+    </ResponseField>
+    
+    <ResponseField name="user" type="string">
+      MongoDB ObjectId of the user who made the purchase
+    </ResponseField>
+    
+    <ResponseField name="content" type="object">
+      Populated content details
+      
+      <Expandable title="content properties">
+        <ResponseField name="_id" type="string">
+          Content MongoDB ObjectId
+        </ResponseField>
+        
+        <ResponseField name="title" type="string">
+          Content title
+        </ResponseField>
+        
+        <ResponseField name="description" type="string">
+          Content description
+        </ResponseField>
+        
+        <ResponseField name="type" type="string">
+          Content type (e.g., "video", "article", "course")
+        </ResponseField>
+        
+        <ResponseField name="thumbnailUrl" type="string">
+          URL to content thumbnail image
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="amount" type="number">
+      Purchase amount in USD
+    </ResponseField>
+    
+    <ResponseField name="stripePaymentIntentId" type="string">
+      Stripe payment intent ID
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Payment status: `pending`, `completed`, `failed`, or `refunded`
+    </ResponseField>
+    
+    <ResponseField name="purchasedAt" type="string">
+      ISO 8601 timestamp of when the purchase record was created
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Purchase Status Values
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Payment intent created, waiting for payment completion |
+| `completed` | Payment successfully processed by Stripe |
+| `failed` | Payment failed (card declined, insufficient funds, etc.) |
+| `refunded` | Payment was refunded by an administrator |
+
+<RequestExample>
+```bash cURL
+curl -X GET https://api.vaniykempire.com/api/payments/status/pi_3MtwBwLkdIwHu7ix28a3tqPa \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  `/api/payments/status/${paymentIntentId}`,
+  {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  }
+);
+
+const { purchase } = await response.json();
+console.log(`Payment status: ${purchase.status}`);
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success - Completed
+{
+  "purchase": {
+    "_id": "65f1a2b3c4d5e6f7g8h9i0j1",
+    "user": "507f1f77bcf86cd799439011",
+    "content": {
+      "_id": "507f191e810c19729de860ea",
+      "title": "Advanced React Patterns",
+      "description": "Learn advanced React patterns and best practices",
+      "type": "course",
+      "thumbnailUrl": "https://cdn.vaniykempire.com/thumbnails/react-course.jpg"
+    },
+    "amount": 29.99,
+    "stripePaymentIntentId": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+    "status": "completed",
+    "purchasedAt": "2024-03-15T10:30:00.000Z"
+  }
+}
+```
+
+```json 200 Success - Pending
+{
+  "purchase": {
+    "_id": "65f1a2b3c4d5e6f7g8h9i0j1",
+    "user": "507f1f77bcf86cd799439011",
+    "content": {
+      "_id": "507f191e810c19729de860ea",
+      "title": "Advanced React Patterns",
+      "description": "Learn advanced React patterns and best practices",
+      "type": "course",
+      "thumbnailUrl": "https://cdn.vaniykempire.com/thumbnails/react-course.jpg"
+    },
+    "amount": 29.99,
+    "stripePaymentIntentId": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+    "status": "pending",
+    "purchasedAt": "2024-03-15T10:30:00.000Z"
+  }
+}
+```
+
+```json 404 Not Found
+{
+  "error": "Payment not found"
+}
+```
+
+```json 500 Server Error
+{
+  "error": "Error message details"
+}
+```
+</ResponseExample>
+
+## Error Codes
+
+| Status Code | Description |
+|-------------|-------------|
+| 200 | Payment status retrieved successfully |
+| 401 | Not authenticated |
+| 404 | Payment intent not found or doesn't belong to user |
+| 500 | Server error |
+
+## Security
+
+- Users can only view payment status for their own purchases
+- The query filters by both `paymentIntentId` and authenticated `userId`
+- Payment intents from other users will return 404
+
+## Use Cases
+
+- Poll this endpoint after payment to check if webhook processed successfully
+- Display payment history to users
+- Verify purchase before granting content access
+- Show refund status to users
+
+## Related Endpoints
+
+- [Create Payment Intent](/api/payments/create-payment-intent) - Start a new payment
+- [Webhook](/api/payments/webhook) - How payment status gets updated
+- [List Payments](/api/payments/list-payments) - Admin endpoint to view all payments
+
+## Implementation Notes
+
+- Content is populated with `title`, `description`, `type`, and `thumbnailUrl` fields
+- User field is not populated in the response (only the ObjectId is returned)
+- Source: `src/controllers/paymentController.js:133-151`

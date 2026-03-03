@@ -1,0 +1,130 @@
+---
+title: 'Admin Login'
+description: 'Authenticate administrators with role verification'
+---
+
+## Admin Login
+
+<api method="POST" path="/api/auth/admin/login" />
+
+Authenticates an administrator with email and password credentials. This endpoint verifies that the user has admin privileges before granting access.
+
+### Authentication
+
+No authentication required.
+
+### Request Body
+
+<ParamField body="email" type="string" required>
+  Administrator's email address
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Administrator's password
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  Authenticated admin user information
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      MongoDB user ID
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      Administrator's email address
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Administrator's full name
+    </ResponseField>
+    <ResponseField name="role" type="string">
+      User role (always "admin" for successful admin login)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="session" type="object">
+  Supabase authentication session
+  <Expandable title="properties">
+    <ResponseField name="access_token" type="string">
+      JWT access token for authenticated requests
+    </ResponseField>
+    <ResponseField name="refresh_token" type="string">
+      Token for refreshing the access token
+    </ResponseField>
+    <ResponseField name="expires_in" type="number">
+      Token expiration time in seconds
+    </ResponseField>
+    <ResponseField name="user" type="object">
+      Supabase user object
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Error Responses
+
+<ResponseField name="error" type="string">
+  Error message
+</ResponseField>
+
+**Status Codes:**
+- `401` - Unauthorized (invalid credentials)
+- `403` - Forbidden (user does not have admin privileges)
+- `404` - User not found in database
+- `500` - Internal server error
+
+### Example Request
+
+```bash
+curl -X POST https://api.vaniyk.com/api/auth/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@vaniyk.com",
+    "password": "adminSecurePass456"
+  }'
+```
+
+### Example Success Response
+
+```json
+{
+  "message": "Admin login successful",
+  "user": {
+    "id": "507f1f77bcf86cd799439012",
+    "email": "admin@vaniyk.com",
+    "name": "Jane Admin",
+    "role": "admin"
+  },
+  "session": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "v1.MRjoP7GqRGKK9Sh91...",
+    "expires_in": 3600,
+    "user": {
+      "id": "d2f3a8b9-1c4e-5f6g-7h8i-9j0k1l2m3n4o",
+      "email": "admin@vaniyk.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  }
+}
+```
+
+### Example Error Response (Non-Admin User)
+
+```json
+{
+  "error": "Access denied. Admin privileges required."
+}
+```
+
+### Usage Notes
+
+- This endpoint should be used exclusively for admin authentication flows
+- Authentication credentials are verified first, then admin role is checked
+- If a regular user tries to login through this endpoint, they will receive a 403 error even with valid credentials
+- Store the `access_token` securely and include it in the `Authorization` header for subsequent admin API requests
+- The token allows access to admin-protected endpoints throughout the API

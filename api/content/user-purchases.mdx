@@ -1,0 +1,158 @@
+---
+title: 'User Purchases'
+openapi: 'GET /api/content/user/purchases'
+---
+
+Retrieves a paginated list of all content purchased by the authenticated user. This endpoint requires authentication.
+
+<Note>
+  This endpoint requires user authentication. Include a valid JWT token in the Authorization header: `Bearer <token>`
+</Note>
+
+## Request Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token for user authentication
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Number of items per page
+</ParamField>
+
+## Response
+
+<ResponseField name="purchases" type="array">
+  Array of purchase objects
+  
+  <Expandable title="Purchase Object">
+    <ResponseField name="_id" type="string">
+      Unique identifier for the purchase
+    </ResponseField>
+    
+    <ResponseField name="user" type="string">
+      User ID who made the purchase
+    </ResponseField>
+    
+    <ResponseField name="content" type="object">
+      Populated content object (limited fields)
+      
+      <Expandable title="Content Object">
+        <ResponseField name="_id" type="string">
+          Content ID
+        </ResponseField>
+        
+        <ResponseField name="title" type="string">
+          Content title
+        </ResponseField>
+        
+        <ResponseField name="description" type="string">
+          Content description
+        </ResponseField>
+        
+        <ResponseField name="type" type="string">
+          Content type: `pdf`, `video`, or `audio`
+        </ResponseField>
+        
+        <ResponseField name="category" type="string">
+          Category ID
+        </ResponseField>
+        
+        <ResponseField name="price" type="number">
+          Content price
+        </ResponseField>
+        
+        <ResponseField name="thumbnailUrl" type="string">
+          URL to the content thumbnail image
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Purchase status (only `completed` purchases are returned)
+    </ResponseField>
+    
+    <ResponseField name="purchasedAt" type="string">
+      ISO 8601 date string
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="totalPages" type="number">
+  Total number of pages
+</ResponseField>
+
+<ResponseField name="currentPage" type="number">
+  Current page number
+</ResponseField>
+
+<ResponseField name="totalPurchases" type="number">
+  Total count of completed purchases
+</ResponseField>
+
+## Error Responses
+
+### 401 Unauthorized
+Returned when authentication token is missing or invalid.
+
+### 500 Internal Server Error
+```json
+{
+  "error": "Error message"
+}
+```
+
+<Info>
+  This endpoint only returns purchases with `status: 'completed'`. Pending or failed purchases are not included. The purchases are sorted by `purchasedAt` in descending order (most recent first).
+</Info>
+
+<Tip>
+  To access the full content including the file URL, use the [Access Content](/api/content/access-content) endpoint with the content ID from the purchase.
+</Tip>
+
+<ResponseExample>
+```json
+{
+  "purchases": [
+    {
+      "_id": "507f1f77bcf86cd799439014",
+      "user": "507f1f77bcf86cd799439015",
+      "content": {
+        "_id": "507f1f77bcf86cd799439011",
+        "title": "Advanced JavaScript Patterns",
+        "description": "Learn advanced design patterns in JavaScript",
+        "type": "pdf",
+        "category": "507f1f77bcf86cd799439012",
+        "price": 29.99,
+        "thumbnailUrl": "https://res.cloudinary.com/example/image/upload/v1234567890/thumbnail.jpg"
+      },
+      "status": "completed",
+      "purchasedAt": "2024-03-02T10:30:00.000Z"
+    },
+    {
+      "_id": "507f1f77bcf86cd799439016",
+      "user": "507f1f77bcf86cd799439015",
+      "content": {
+        "_id": "507f1f77bcf86cd799439017",
+        "title": "Node.js Microservices",
+        "description": "Building scalable microservices with Node.js",
+        "type": "video",
+        "category": "507f1f77bcf86cd799439018",
+        "price": 49.99,
+        "thumbnailUrl": "https://res.cloudinary.com/example/image/upload/v1234567890/thumbnail2.jpg"
+      },
+      "status": "completed",
+      "purchasedAt": "2024-03-01T14:20:00.000Z"
+    }
+  ],
+  "totalPages": 2,
+  "currentPage": 1,
+  "totalPurchases": 15
+}
+```
+</ResponseExample>

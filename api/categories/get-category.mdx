@@ -1,0 +1,107 @@
+---
+title: "Get Category"
+api: "GET /api/categories/:slug"
+description: "Retrieve a specific category by its slug"
+---
+
+Retrieves a single category identified by its URL-friendly slug. This endpoint is publicly accessible and does not require authentication.
+
+## Request
+
+### Path Parameters
+
+<ParamField path="slug" type="string" required>
+  The URL-friendly identifier of the category (e.g., "technology", "travel")
+</ParamField>
+
+### Headers
+
+No authentication required.
+
+## Response
+
+<ResponseField name="category" type="object">
+  The requested category object
+  
+  <Expandable title="Properties">
+    <ResponseField name="_id" type="string">
+      Unique identifier for the category
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Display name of the category
+    </ResponseField>
+    
+    <ResponseField name="slug" type="string">
+      URL-friendly identifier for the category
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Optional description of the category
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of when the category was created
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "category": {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "Technology",
+    "slug": "technology",
+    "description": "Articles about technology and innovation",
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+<ResponseField name="error" type="string">
+  Error message describing what went wrong
+</ResponseField>
+
+### 404 - Category Not Found
+
+Returned when no category exists with the specified slug.
+
+```json
+{
+  "error": "Category not found"
+}
+```
+
+### 500 - Internal Server Error
+
+```json
+{
+  "error": "Database connection failed"
+}
+```
+
+## Example Request
+
+<CodeGroup>
+```bash cURL
+curl https://api.vaniyk-empire.com/api/categories/technology
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.vaniyk-empire.com/api/categories/technology');
+const data = await response.json();
+console.log(data.category);
+```
+
+```python Python
+import requests
+
+response = requests.get('https://api.vaniyk-empire.com/api/categories/technology')
+data = response.json()
+print(data['category'])
+```
+</CodeGroup>

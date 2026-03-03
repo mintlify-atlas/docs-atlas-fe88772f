@@ -1,0 +1,115 @@
+---
+title: 'User Login'
+description: 'Authenticate users with email and password'
+---
+
+## Regular User Login
+
+<api method="POST" path="/api/auth/login" />
+
+Authenticates a user with email and password credentials.
+
+### Authentication
+
+No authentication required.
+
+### Request Body
+
+<ParamField body="email" type="string" required>
+  User's email address
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  Authenticated user information
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      MongoDB user ID
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      User's email address
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="session" type="object">
+  Supabase authentication session
+  <Expandable title="properties">
+    <ResponseField name="access_token" type="string">
+      JWT access token for authenticated requests
+    </ResponseField>
+    <ResponseField name="refresh_token" type="string">
+      Token for refreshing the access token
+    </ResponseField>
+    <ResponseField name="expires_in" type="number">
+      Token expiration time in seconds
+    </ResponseField>
+    <ResponseField name="user" type="object">
+      Supabase user object
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Error Responses
+
+<ResponseField name="error" type="string">
+  Error message
+</ResponseField>
+
+**Status Codes:**
+- `401` - Unauthorized (invalid credentials)
+- `500` - Internal server error
+
+### Example Request
+
+```bash
+curl -X POST https://api.vaniyk.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securePassword123"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "message": "Login successful",
+  "user": {
+    "id": "507f1f77bcf86cd799439011",
+    "email": "user@example.com",
+    "name": "John Doe"
+  },
+  "session": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "v1.MRjoP7GqRGKK9Sh91...",
+    "expires_in": 3600,
+    "user": {
+      "id": "d2f3a8b9-1c4e-5f6g-7h8i-9j0k1l2m3n4o",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  }
+}
+```
+
+### Usage Notes
+
+- Store the `access_token` securely in your client application
+- Include the access token in the `Authorization` header for subsequent API requests: `Authorization: Bearer <access_token>`
+- Use the `refresh_token` to obtain a new access token when it expires
+- The session includes both MongoDB user data and Supabase authentication data
