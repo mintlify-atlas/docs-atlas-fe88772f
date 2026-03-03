@@ -1,0 +1,159 @@
+---
+title: "Get User Profile"
+api: "GET /api/auth/profile"
+description: "Retrieve the authenticated user's profile information"
+---
+
+## Overview
+
+Retrieves the profile information for the currently authenticated user. This endpoint requires a valid JWT token and returns the user's MongoDB profile data.
+
+## Authentication
+
+This endpoint requires authentication. Include a valid access token in the Authorization header.
+
+```http
+Authorization: Bearer <access_token>
+```
+
+## Request
+
+No request body or parameters required. The user is identified from the JWT token.
+
+```bash cURL
+curl -X GET "https://api.vaniykempire.com/api/auth/profile" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.vaniykempire.com/api/auth/profile', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+const data = await response.json();
+console.log(data.user);
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.vaniykempire.com/api/auth/profile',
+    headers={
+        'Authorization': f'Bearer {access_token}'
+    }
+)
+
+data = response.json()
+print(data['user'])
+```
+
+## Response
+
+<ResponseField name="user" type="object">
+  The user's profile information
+
+  <Expandable title="user properties">
+    <ResponseField name="_id" type="string">
+      MongoDB user ID
+    </ResponseField>
+
+    <ResponseField name="supabaseId" type="string">
+      Supabase user ID (links to authentication system)
+    </ResponseField>
+
+    <ResponseField name="email" type="string">
+      User's email address
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
+
+    <ResponseField name="role" type="string">
+      User role - either `"user"` or `"admin"`
+    </ResponseField>
+
+    <ResponseField name="emailVerified" type="boolean">
+      Whether the user's email has been verified
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of account creation
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of last profile update
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Success Response
+
+```json
+{
+  "user": {
+    "_id": "65f7b3c8e1234567890abcde",
+    "supabaseId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "role": "user",
+    "emailVerified": true,
+    "createdAt": "2024-03-15T10:30:00.000Z",
+    "updatedAt": "2024-03-15T10:30:00.000Z"
+  }
+}
+```
+
+## Error Responses
+
+<ResponseField name="error" type="string">
+  Error message describing what went wrong
+</ResponseField>
+
+### 401 Unauthorized
+
+Returned when the access token is missing, invalid, or expired.
+
+```json
+{
+  "error": "Invalid token"
+}
+```
+
+### 404 Not Found
+
+Returned when the user record doesn't exist in MongoDB (rare case).
+
+```json
+{
+  "error": "User not found"
+}
+```
+
+### 500 Internal Server Error
+
+Returned when a server error occurs.
+
+```json
+{
+  "error": "Internal server error message"
+}
+```
+
+## Notes
+
+<Info>
+  The profile endpoint uses the JWT token to identify the user, so you don't need to pass a user ID. Each user can only access their own profile.
+</Info>
+
+<Note>
+  This endpoint returns data from MongoDB, not Supabase. It includes the `supabaseId` field which links the MongoDB record to the Supabase authentication record.
+</Note>
+
+## Related Endpoints
+
+- [Signup](/api/auth/signup) - Create a new user account
+- [Login](/api/auth/login) - Authenticate and get an access token

@@ -59,6 +59,7 @@
               "api/auth/signup",
               "api/auth/login",
               "api/auth/admin-login",
+              "api/auth/profile",
               "api/auth/password-reset",
               "api/auth/email-verification"
             ]
@@ -72,7 +73,8 @@
               "api/content/update-content",
               "api/content/delete-content",
               "api/content/access-content",
-              "api/content/user-purchases"
+              "api/content/user-purchases",
+              "api/content/admin-list"
             ]
           },
           {
